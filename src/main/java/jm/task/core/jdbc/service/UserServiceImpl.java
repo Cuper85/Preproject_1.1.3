@@ -50,47 +50,4 @@ public class UserServiceImpl implements UserService {
     }
 }
 
-/*
-public class UserServiceImpl implements UserService {
 
-    private final UserDao userDao;
-
-    {
-        try {
-            userDao = new UserDaoJDBCImpl();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void createUsersTable() throws SQLException {
-        userDao.createUsersTable();
-    }
-
-    @Override
-    public void dropUsersTable() throws SQLException {
-        userDao.dropUsersTable();
-    }
-
-    @Override
-    public void saveUser(String name, String lastName, byte age) throws SQLException {
-        userDao.saveUser(name, lastName, age);
-    }
-
-    @Override
-    public void removeUserById(long id) throws SQLException {
-        userDao.removeUserById(id);
-    }
-
-    @Override
-    public List<User> getAllUsers() {
-        return userDao.getAllUsers();
-    }
-
-    @Override
-    public void cleanUsersTable() {
-        userDao.cleanUsersTable();
-    }
-}
- */
