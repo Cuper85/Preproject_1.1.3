@@ -9,10 +9,18 @@ import java.util.List;
 
 public class UserServiceImpl implements UserService {
 
-    private final UserDao userDao = new UserDaoJDBCImpl();
+    private final UserDao userDao;
+
+    {
+        try {
+            userDao = new UserDaoJDBCImpl();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
-    public void createUsersTable() throws SQLException {
+    public void createUsersTable() {
         userDao.createUsersTable();
     }
 

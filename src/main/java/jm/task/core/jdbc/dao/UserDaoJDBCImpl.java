@@ -1,19 +1,26 @@
 package jm.task.core.jdbc.dao;
 
 import jm.task.core.jdbc.model.User;
-import java.sql.*;
+import jm.task.core.jdbc.util.Util;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import static jm.task.core.jdbc.util.Util.getConnection;
 
 public class UserDaoJDBCImpl implements UserDao {
+    private Connection connection;
 
-    public UserDaoJDBCImpl() {
+    public UserDaoJDBCImpl() throws SQLException {
+        this.connection = Util.getConnection();
     }
 
     @Override
     public void dropUsersTable() {
-        try (Statement statement = getConnection().createStatement()) {
+        try (Statement statement = connection.createStatement()) {
             statement.execute("DROP TABLE IF EXISTS User;");
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка при удалении таблицы", e);
@@ -21,8 +28,8 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     @Override
-    public void createUsersTable() throws SQLException {
-        try (Statement statement = getConnection().createStatement()) {
+    public void createUsersTable() {
+        try (Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS User (" +
                     "id INT PRIMARY KEY AUTO_INCREMENT, " +
                     "name VARCHAR(15), " +
@@ -37,13 +44,20 @@ public class UserDaoJDBCImpl implements UserDao {
     @Override
     public void saveUser(String name, String lastName, byte age) {
         String insert = "INSERT INTO user (name, lastName, age) VALUES (?, ?, ?)";
-        try (PreparedStatement preparedStatement = getConnection().prepareStatement(insert)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insert)) {
+            connection.setAutoCommit(false);
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setByte(3, age);
             preparedStatement.execute();
+            connection.commit();
             System.out.println("User " + name + " добавлен в таблицу");
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackException) {
+                throw new RuntimeException("Ошибка отката транзакции", rollbackException);
+            }
             throw new RuntimeException("Ошибка добавления user'а в таблицу", e);
         }
     }
@@ -51,11 +65,18 @@ public class UserDaoJDBCImpl implements UserDao {
     @Override
     public void removeUserById(long id) {
         String deleteOfId = "DELETE FROM user WHERE id = ?";
-        try (PreparedStatement preparedStatement = getConnection().prepareStatement(deleteOfId)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(deleteOfId)) {
+            connection.setAutoCommit(false);
             preparedStatement.setLong(1, id);
             preparedStatement.execute();
+            connection.commit();
             System.out.println("User с данным ID " + id + " удалён из таблицы");
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackException) {
+                throw new RuntimeException("Ошибка отката транзакции", rollbackException);
+            }
             throw new RuntimeException("Ошибка удаления user'а из таблицы", e);
         }
     }
@@ -64,7 +85,7 @@ public class UserDaoJDBCImpl implements UserDao {
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         String query = "SELECT * FROM user";
-        try (Statement statement = getConnection().createStatement();
+        try (Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
             while (resultSet.next()) {
                 User user = new User();
@@ -82,12 +103,17 @@ public class UserDaoJDBCImpl implements UserDao {
 
     @Override
     public void cleanUsersTable() {
-        try (Statement statement = getConnection().createStatement()) {
+        try (Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false);
             statement.execute("DELETE FROM user;");
+            connection.commit();
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackException) {
+                throw new RuntimeException("Ошибка отката транзакции", rollbackException);
+            }
             throw new RuntimeException("Ошибка очистки таблицы", e);
         }
     }
 }
-
-
